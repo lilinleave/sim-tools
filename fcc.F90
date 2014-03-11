@@ -1,22 +1,9 @@
-program printfcc
-  implicit none
-
-  double precision, parameter :: FCCspacing = 4.050d0
-  integer, parameter :: nCellsPerSide  = 20
-  double precision :: coords(3,*)
-  integer :: MiddleAtomId
-
-  
-  call create_FCC_configuration(FCCspacing, nCellsPerSide, periodic, coords, MiddleAtomId)
-
-
-
-
-
-
-
-
-
+  integer,          parameter :: &
+       N = 4*nCellsPerSide(1)*nCellsPerSide(2)*nCellsPerSide(3)+&
+           2*nCellsPerSide(1)*nCellsPerSide(2)+&
+           2*nCellsPerSide(1)*nCellsPerSide(3)+&
+           2*nCellsPerSide(2)*nCellsPerSide(3)+&
+           nCellsPerSide(1)+nCellsPerSide(2)+nCellsPerSide(3)+1
 
 !-------------------------------------------------------------------------------
 !
@@ -40,7 +27,7 @@ subroutine create_FCC_configuration(FCCspacing, nCellsPerSide, periodic, coords,
 
   !-- Transferred variables
   double precision, intent(in)  :: FCCspacing
-  integer,          intent(in)  :: nCellsPerSide
+  integer,          intent(in)  :: nCellsPerSide(3)
   logical,          intent(in)  :: periodic
   double precision, intent(out) :: coords(3,*)
   integer,          intent(out) :: MiddleAtomId
@@ -60,63 +47,79 @@ subroutine create_FCC_configuration(FCCspacing, nCellsPerSide, periodic, coords,
 
   MiddleAtomID = 1 ! Always put middle atom as #1
   a = 1            ! leave space for middle atom as atom #1
-  do i=1,nCellsPerSide
+  do i=1,nCellsPerSide(1)
      latVec(1) = (i-1)*FCCspacing
-     do j=1,nCellsPerSide
+     do j=1,nCellsPerSide(2)
         latVec(2) = (j-1)*FCCspacing
-        do k=1,nCellsPerSide
+        do k=1,nCellsPerSide(3)
            latVec(3) = (k-1)*FCCspacing
            do m=1,4
               a = a+1
               coords(:,a) = latVec + FCCshifts(:,m)
-              if ((i.eq.nCellsPerside/2+1) .and. (j.eq.nCellsPerSide/2+1) .and. &
-                   (k.eq.nCellsPerSide/2+1) .and. (m.eq.1)) then
+              if ((i.eq.nCellsPerside(1)/2+1) .and. (j.eq.nCellsPerSide(2)/2+1) .and. &
+                   (k.eq.nCellsPerSide(3)/2+1) .and. (m.eq.1)) then
                  coords(:,1) = latVec + FCCshifts(:,m) ! put middle atom as atom #1
                  a = a - 1
               endif
            enddo
         enddo
-        if (.not. periodic) then
-            ! Add in the remaining three faces
-            ! pos-x face
-            latVec(1) = nCellsPerSide*FCCspacing
-            latVec(2) = (i-1)*FCCspacing
-            latVec(3) = (j-1)*FCCspacing
-            a = a+1; coords(:,a) = latVec
-            a = a+1; coords(:,a) = latVec + FCCshifts(:,4)
-            ! pos-y face
-            latVec(1) = (i-1)*FCCspacing
-            latVec(2) = nCellsPerSide*FCCspacing
-            latVec(3) = (j-1)*FCCspacing
-            a = a+1; coords(:,a) = latVec
-            a = a+1; coords(:,a) = latVec + FCCshifts(:,3)
-            ! pos-z face
-            latVec(1) = (i-1)*FCCspacing
-            latVec(2) = (j-1)*FCCspacing
-            latVec(3) = nCellsPerSide*FCCspacing
-            a = a+1; coords(:,a) = latVec
-            a = a+1; coords(:,a) = latVec + FCCshifts(:,2)
-         endif
      enddo
-     if (.not. periodic) then
-         ! Add in the remaining three edges
-         latVec(1) = (i-1)*FCCspacing
-         latVec(2) = nCellsPerSide*FCCspacing
-         latVec(3) = nCellsPerSide*FCCspacing
-         a = a+1; coords(:,a) = latVec
-         latVec(1) = nCellsPerSide*FCCspacing
-         latVec(2) = (i-1)*FCCspacing
-         latVec(3) = nCellsPerSide*FCCspacing
-         a = a+1; coords(:,a) = latVec
-         latVec(1) = nCellsPerSide*FCCspacing
-         latVec(2) = nCellsPerSide*FCCspacing
-         latVec(3) = (i-1)*FCCspacing
-         a = a+1; coords(:,a) = latVec
-      endif
   enddo
+  
   if (.not. periodic) then
-      ! Add in the remaining corner
-      a = a+1; coords(:,a) = nCellsPerSide*FCCspacing
+     ! Add in the remaining corner
+     latVec(1) = nCellsPerSide(1)*FCCspacing
+     latVec(2) = nCellsPerSide(2)*FCCspacing
+     latVec(3) = nCellsPerSide(3)*FCCspacing
+     a = a+1; coords(:,a) = latVec
+
+     do j=1,nCellsPerSide(2)
+        ! Add in the remaining edge
+        latVec(1) = nCellsPerSide(1)*FCCspacing
+        latVec(2) = (j-1)*FCCspacing
+        latVec(3) = nCellsPerSide(3)*FCCspacing
+        a = a+1; coords(:,a) = latVec
+        do k=1,nCellsPerSide(3)
+           ! Add in the remaining face
+           ! pos-x face
+           latVec(1) = nCellsPerSide(1)*FCCspacing
+           latVec(2) = (j-1)*FCCspacing
+           latVec(3) = (k-1)*FCCspacing
+           a = a+1; coords(:,a) = latVec
+           a = a+1; coords(:,a) = latVec + FCCshifts(:,4)
+        enddo
+     enddo
+
+     do i=1,nCellsPerSide(1)
+        ! Add in the remaining edge
+        latVec(1) = (i-1)*FCCspacing
+        latVec(2) = nCellsPerSide(2)*FCCspacing
+        latVec(3) = nCellsPerSide(3)*FCCspacing
+        a = a+1; coords(:,a) = latVec
+        do k=1,nCellsPerSide(3)
+           ! pos-y face
+           latVec(1) = (i-1)*FCCspacing
+           latVec(2) = nCellsPerSide(2)*FCCspacing
+           latVec(3) = (k-1)*FCCspacing
+           a = a+1; coords(:,a) = latVec
+           a = a+1; coords(:,a) = latVec + FCCshifts(:,3)
+        enddo
+        do j=1,nCellsPerSide(2)
+           ! pos-z face
+           latVec(1) = (i-1)*FCCspacing
+           latVec(2) = (j-1)*FCCspacing
+           latVec(3) = nCellsPerSide(3)*FCCspacing
+           a = a+1; coords(:,a) = latVec
+           a = a+1; coords(:,a) = latVec + FCCshifts(:,2)
+        enddo
+     enddo
+     ! Add in the remaining edge
+     do k=1,nCellsPerSide(3)
+        latVec(1) = nCellsPerSide(1)*FCCspacing
+        latVec(2) = nCellsPerSide(2)*FCCspacing
+        latVec(3) = (k-1)*FCCspacing
+        a = a+1; coords(:,a) = latVec
+     enddo
   endif
 
   return
