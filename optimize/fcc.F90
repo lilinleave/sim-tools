@@ -1,9 +1,18 @@
+program fcc_deform
+  implicit none
+  double precision, parameter :: FCCspacing       = 4.050d0
+  integer,          parameter :: nCellsPerSide(3) = [/5,3,1/]
   integer,          parameter :: &
        N = 4*nCellsPerSide(1)*nCellsPerSide(2)*nCellsPerSide(3)+&
            2*nCellsPerSide(1)*nCellsPerSide(2)+&
            2*nCellsPerSide(1)*nCellsPerSide(3)+&
            2*nCellsPerSide(2)*nCellsPerSide(3)+&
            nCellsPerSide(1)+nCellsPerSide(2)+nCellsPerSide(3)+1
+  integer,          parameter :: DIM = 3
+  double precision            :: coords(N,DIM), forces(N,DIM), energy
+  integer middleAtomID
+
+  call create_FCC_configuration(FCCspacing, nCellsPerSide, .false., coords, MiddleAtomId)
 
 !-------------------------------------------------------------------------------
 !
